@@ -267,11 +267,26 @@ def balance(money):
 def buy(to_buy, tier):
     output = False
     for gift in to_buy:
-        if check(pth("teams", "Burn", "buy", gift), region=(809, 300, 942, 402), click=True, skip_wait=True, grayscale=False):
+        # หาไอเทมที่ต้องการซื้อ
+        gift_region = (809, 300, 942, 402)
+        if check(pth("teams", "Burn", "buy", gift), region=gift_region, click=False, skip_wait=True, grayscale=False):
+            # เช็คว่าไอเทมนี้มีคำว่า "Purchased" ขึ้นอยู่หรือไม่
+            try:
+                locateOnScreenRGBA(pth("teams", "Burn", "buy", "Purchased.png"), region=gift_region, grayscale=False, confidence=0.8)
+                print(f"{gift} ถูกซื้อไปแล้ว — ข้าม")
+                continue  # ข้ามการซื้อ
+            except gui.ImageNotFoundException:
+                pass  # ไม่เจอ Purchased → ซื้อได้
+
+            # ซื้อไอเทม
+            check(pth("teams", "Burn", "buy", gift), region=gift_region, click=True, skip_wait=True, grayscale=False)
             check("purchase.png", region=(972, 679, 288, 91), click=True, path=PATH)
             check("EGOconfirm.png", region=(791, 745, 336, 104), click=True)
             output = True
+
     time.sleep(0.1)
+
+    # ซื้อตาม tier เฉย ๆ (ไม่มี check purchased)
     try:
         find_image_with_brightness_filter(pth(UI_PATH, "teams", "Burn", "buy", f"{tier}.png"), region=(809, 300, 942, 402), click=True)
         check("purchase.png", region=(972, 679, 288, 91), click=True, path=PATH)
@@ -279,6 +294,7 @@ def buy(to_buy, tier):
     except gui.ImageNotFoundException:
         return output
     return True
+
 
 
 def buy_loop(to_buy, tier, skip, uptie=True):
